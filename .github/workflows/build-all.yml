@@ -2,7 +2,7 @@ name: Build ArcPort (Windows & Linux)
 
 on:
   push:
-    branches: [main]
+    branches: [main, 'feat/**', 'fix/**']  # (ArcPort: work branches build too; only v* tags publish a release)
     tags: ['v*']
   workflow_dispatch:
 
