@@ -69,7 +69,7 @@ bool rt_compile_crash_at(uint64_t pc) {
 void rt_crash_explain(char *out, size_t n, const char *log_path) {
     static const char *const report = "Please report it as a GitHub issue and attach the log file below. "
                                       "Your progress up to your last save or autosave is safe.";
-    const char *app = "PokeL-ARecomp";  // (not by g_game_is_la: a driver error comes before the game is detected, and showed "LAS Recomp" - issue #23)
+    const char *app = "ArcPort";  // (not by g_game_is_la: a driver error comes before the game is detected, and showed "LAS Recomp" - issue #23)
     char head[160], what[400];
     extern void vk_compile_crash_note(void) __attribute__((weak));  // (Vulkan: was this thread compiling a pipeline?)
     if (vk_compile_crash_note && g_pc && rt_compile_crash_at(g_pc)) vk_compile_crash_note();

@@ -2388,7 +2388,7 @@ void ui_window_init(void) {
                                             ENV("LARECOMP_HOST_INPUT") || ENV("LARECOMP_BIND_TEST"));
         if (scripted) SDL_SetHint(SDL_HINT_WINDOW_ACTIVATE_WHEN_SHOWN, "0");
     }
-    window = SDL_CreateWindow("PokeL-ARecomp - Pokémon Legends: Arceus", win_w, win_h, wflags);
+    window = SDL_CreateWindow("ArcPort - Pokémon Legends: Arceus", win_w, win_h, wflags);
     if (!window) FATAL("SDL_CreateWindow: %s\n", SDL_GetError());
     rt_window_icon(window);
     // Launcher always opens in windowed mode first; fullscreen applies once the game launches or if requested in-game

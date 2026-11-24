@@ -141,7 +141,7 @@ static bool find_tools(Tools *t) {
     if (b > s) s = b;
     if (s) *s = 0;
 #ifdef _WIN32
-    if (!rt_resource("PokeL-ARecomp.dll.a", "build/PokeL-ARecomp.dll.a", t->implib, sizeof t->implib) &&
+    if (!rt_resource("ArcPort.dll.a", "build/ArcPort.dll.a", t->implib, sizeof t->implib) &&
         !rt_resource("lasrecomp.dll.a", "build/lasrecomp.dll.a", t->implib, sizeof t->implib)) return false;
     t->zig_rt[0] = 0;
     // (zig/rt-v2: the same runtime built for x86-64-v2, for gamelib_old_cpu)
@@ -391,7 +391,7 @@ bool gamebuild_run(const char *game_dir, const GameBuildOpts *o, char *why, size
     }
     Tools t;
     if (!find_tools(&t)) {
-        snprintf(why, why_size, "the game code builder is missing from this copy of PokeL-ARecomp");
+        snprintf(why, why_size, "the game code builder is missing from this copy of ArcPort");
         return false;
     }
     char work[1100], tmp[1100];

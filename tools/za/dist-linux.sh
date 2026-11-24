@@ -18,7 +18,7 @@ P=$L/deps
 B=$L/za
 APPDIR=$L/za-AppDir
 VERSION=$(sed -n 's/^#define LARECOMP_VERSION "\(.*\)"/\1/p' runtime/ui/launcher.mm)
-OUT="build/dist/PokeL-ARecomp-$VERSION-linux-$ARCH.AppImage"
+OUT="build/dist/ArcPort-$VERSION-linux-$ARCH.AppImage"
 ZAIMPORT=${ZAIMPORT:-1}
 PY=${PYTHON:-python3}  # (the helpers' venvs; e.g. PYTHON=python3.12 in tools/linux/Containerfile's image)
 
@@ -93,7 +93,7 @@ cp tools/linux/AppRun "$APPDIR/" && chmod +x "$APPDIR/AppRun"
 cat > "$APPDIR/pokelrecomp.desktop" <<EOF
 [Desktop Entry]
 Type=Application
-Name=PokeL-ARecomp
+Name=ArcPort
 Comment=Pokémon Legends: Arceus, recompiled for PC (bring your own game files)
 Exec=lasrecomp
 Icon=pokelrecomp

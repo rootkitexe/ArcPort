@@ -121,6 +121,11 @@ void plat_run_begin(void);     // the last run ended without a word: what Window
 // What the screen shows in a window (Windows: a hash of 32x18 samples of the desktop over its client area, while it
 // is the foreground window; false: can't tell)
 bool plat_window_screen_hash(void *hwnd, uint32_t *out);
+// A "Play ArcPort" shortcut to this program on the desktop (ArcPort, Longshot-style: the start screen's Settings >
+// Game files). Windows: a .lnk via IShellLink (the Desktop known folder, so a OneDrive-moved desktop too); Linux: a
+// .desktop file in the applications menu and on ~/Desktop (the AppImage's own path when run as one). Writes the
+// shortcut's path, or what went wrong, into out.
+bool plat_create_shortcut(char *out, size_t n);
 // Called by the crash handler (runtime/dispatch.c): true = fault handled (watchpoint), resume.
 bool rt_fault_watch(uint64_t fault_addr, uint64_t host_pc);
 void rt_fault_report(const char *what, uint64_t fault_addr, uint64_t host_pc, uint64_t host_lr) __attribute__((noreturn));

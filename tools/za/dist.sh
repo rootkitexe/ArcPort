@@ -34,7 +34,7 @@ command -v /c/Windows/System32/curl.exe >/dev/null 2>&1 && CURL_BIN="/c/Windows/
 TAR_BIN="tar"
 command -v /c/Windows/System32/tar.exe >/dev/null 2>&1 && TAR_BIN="/c/Windows/System32/tar.exe"
 GENOPT="-O1 -DGUEST_VOLATILE" GENARCH=-march=x86-64-v3  # (the game code's flags: part of the library id)
-B=build/za-dist D="build/dist-za/PokeL-ARecomp"
+B=build/za-dist D="build/dist-za/ArcPort"
 
 # 1. the compiler (Windows' curl: MSYS2's one rejects TLS-inspecting proxies' certificates)
 ZIP_ZIG=build/zig-dl/zig-x86_64-windows-0.17.0.zip
@@ -92,8 +92,8 @@ if [ ! -f "$SRC_FF" ]; then
     done
 fi
 bash tools/build_deps_windows.sh
-make -j"$(nproc)" B=$B DEPS="$PWD/build/deps-win" RELEASE=1 GENARCH="$GENARCH" GENOPT="$GENOPT" $B/PokeL-ARecomp.exe
-! nm $B/PokeL-ARecomp.exe | grep -q ' f_70'  # (no game code inside)
+make -j"$(nproc)" B=$B DEPS="$PWD/build/deps-win" RELEASE=1 GENARCH="$GENARCH" GENOPT="$GENOPT" $B/ArcPort.exe
+! nm $B/ArcPort.exe | grep -q ' f_70'  # (no game code inside)
 FLAGS=$(make -s --eval='pv: ; @echo $(strip $(filter-out -Iruntime,$(GENFLAGS)))' B=$B GENARCH="$GENARCH" GENOPT="$GENOPT" pv)
 bash tools/zig_slim.sh $FLAGS
 # 4. the game file importer (self-contained: no .NET needed on the player's machine)
@@ -109,7 +109,7 @@ fi
 
 # 5. the folder
 rm -rf build/dist-za && mkdir -p "$D/gamelib-src" "$D/zaimport"
-cp $B/PokeL-ARecomp.exe $B/PokeL-ARecomp.dll.a "$D/"
+cp $B/ArcPort.exe $B/ArcPort.dll.a "$D/"
 [ "${EXTRACTOR:-0}" = 1 ] && [ -f build/PokeL-Extractor/PokeL-Extractor.exe ] && cp build/PokeL-Extractor/PokeL-Extractor.exe "$D/"
 cp -R build/helper/lasgen "$D/"
 cp -R build/helper/zaprompts "$D/"
@@ -131,11 +131,11 @@ cp docs/XBOX-ATTACK-LAYOUT.md "$D/docs/"
 [ -f third_party/xess/bin/libxell.dll ] && cp third_party/xess/bin/libxell.dll "$D/"
 cp tools/za/za-default.ini "$D/za-default.ini"  # (not larecomp.ini: the first run copies it, runtime/paths.c - a new zip unzipped over an install keeps the player's own)
 # (every DLL but Windows' own and the Vulkan loader: also when copies sit next to the exe in $B, a dev setup)
-PATH="$PWD/build/deps-win/bin:$PATH" ldd $B/PokeL-ARecomp.exe | awk 'tolower($3) !~ /^\/c\/windows\// && !/vulkan-1/ {print $3}' | sort -u |
+PATH="$PWD/build/deps-win/bin:$PATH" ldd $B/ArcPort.exe | awk 'tolower($3) !~ /^\/c\/windows\// && !/vulkan-1/ {print $3}' | sort -u |
     while read -r f; do cp "$f" "$D/"; done
 ! ls "$D" | grep -iE 'x264|x265|xvid|postproc'  # (no GPL codec libraries in the release)
 du -sh "$D"
 if [ "${ZIP:-0}" = 1 ]; then
-    (cd build/dist-za && $TAR_BIN -a -cf PokeL-ARecomp-windows-x64.zip "PokeL-ARecomp")
-    ls -la build/dist-za/PokeL-ARecomp-windows-x64.zip
+    (cd build/dist-za && $TAR_BIN -a -cf ArcPort-windows-x64.zip "ArcPort")
+    ls -la build/dist-za/ArcPort-windows-x64.zip
 fi

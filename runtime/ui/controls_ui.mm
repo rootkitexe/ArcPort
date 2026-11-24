@@ -398,7 +398,7 @@ extern "C" void controls_tab_draw(float scale) {
     {
         const char *const names[] = {TR("Game layout", "Layout do jogo"), TR("Controller convention", "Padrão do controle")};
         opt_choice(TR("Confirm button", "Botão de confirmar"), &g_settings.menu_confirm, names, 2, MENU_CONFIRM_CONTROLLER,
-                   TR("Which button confirms in PokeL-ARecomp's menus.", "Qual botão confirma nos menus do PokeL-ARecomp."));
+                   TR("Which button confirms in ArcPort's menus.", "Qual botão confirma nos menus do ArcPort."));
     }
 
     stick_mouse_rows();

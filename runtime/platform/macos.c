@@ -206,14 +206,14 @@ void plat_fatal_notice(void) {
     if (!g_log_path[0]) return;
     fflush(stderr);
     CFStringRef msg = CFStringCreateWithCString(NULL, text, kCFStringEncodingUTF8);
-    CFUserNotificationDisplayAlert(0, kCFUserNotificationStopAlertLevel, NULL, NULL, NULL, CFSTR("PokeL-ARecomp"), msg,
+    CFUserNotificationDisplayAlert(0, kCFUserNotificationStopAlertLevel, NULL, NULL, NULL, CFSTR("ArcPort"), msg,
                                    CFSTR("OK"), NULL, NULL, NULL);
     if (msg) CFRelease(msg);
 }
 
 static void *notice_thread(void *text) {
     CFStringRef msg = CFStringCreateWithCString(NULL, text, kCFStringEncodingUTF8);
-    CFUserNotificationDisplayAlert(0, kCFUserNotificationCautionAlertLevel, NULL, NULL, NULL, CFSTR("PokeL-ARecomp"), msg,
+    CFUserNotificationDisplayAlert(0, kCFUserNotificationCautionAlertLevel, NULL, NULL, NULL, CFSTR("ArcPort"), msg,
                                    CFSTR("OK"), NULL, NULL, NULL);
     if (msg) CFRelease(msg);
     free(text);
@@ -311,3 +311,4 @@ int plat_rename(const char *from, const char *to) {
 bool plat_onedrive_synced(const char *dir) { (void)dir; return false; }
 
 bool plat_window_screen_hash(void *hwnd, uint32_t *out) { (void)hwnd, (void)out; return false; }  // (Windows only)
+bool plat_create_shortcut(char *out, size_t n) { snprintf(out, n, "not on macOS: drag the app to the Dock"); return false; }

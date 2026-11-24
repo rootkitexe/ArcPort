@@ -13,7 +13,7 @@
 
 #include <SDL3/SDL.h>
 
-#define REPORT_REPO "https://github.com/fabioschmidt01/PokeL-ARecomp"
+#define REPORT_REPO "https://github.com/rootkitexe/ArcPort"
 
 static bool copy_file(const char *from, const char *to) {
     FILE *in = fopen(from, "rb");
@@ -197,7 +197,7 @@ void rt_crash_dialog(const char *text, const char *log_path) {
                   "já preenchida: é só arrastar os arquivos da pasta para ela."
                 : "\"Report on GitHub\" puts your larecomp.ini, the logs and your PC's details in one folder and opens an "
                   "issue already filled in: just drag the folder's files into it.");
-    const SDL_MessageBoxData box = {SDL_MESSAGEBOX_ERROR, NULL, "PokeL-ARecomp", msg, 3, b, NULL};
+    const SDL_MessageBoxData box = {SDL_MESSAGEBOX_ERROR, NULL, "ArcPort", msg, 3, b, NULL};
     int k = 0;
     if (!SDL_ShowMessageBox(&box, &k)) { fprintf(stderr, "%s\n", text); return; }
     if (k == 1) rt_crash_report(head, log_path);

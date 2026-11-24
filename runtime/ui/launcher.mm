@@ -102,7 +102,7 @@ static const char *build_version(const uint8_t id[8]) {
 }
 static bool build_is_za(const uint8_t id[8]) { return build_version(id) && memcmp(id, BUILD_ID, 8); }
 // The release tag this build is (also names the release files; Makefile / tools/bundle_macos.sh / make_dmg.sh read
-// it): PokeL-ARecomp's v<major>.<minor>.<patch>.
+// it): ArcPort's v<major>.<minor>.<patch> (a fork of PokeL-ARecomp, whose numbering it continues).
 #define LARECOMP_VERSION "v0.27.0"
 extern "C" const char *rt_version(void) { return LARECOMP_VERSION; }  // (runtime/main.c: the log's first line)
 extern "C" const char *larecomp_version(void) { return LARECOMP_VERSION; }  // (the shader caches' tag)
@@ -119,8 +119,8 @@ static void lang_update(void) { g_pt = settings_ui_portuguese(); }  // (runtime/
 // The start screen asks GitHub for the project's releases once per launch (a background curl, which macOS and
 // Windows 10+ ship) and offers the best one if it outranks this build: any v<x.y.z> above every beta, betas by
 // number; other tags are ignored. Offline / no curl / anything unexpected: nothing is shown.
-#define RELEASES_URL "https://api.github.com/repos/fabioschmidt01/PokeL-ARecomp/releases?per_page=100"
-#define RELEASE_PAGE "https://github.com/fabioschmidt01/PokeL-ARecomp/releases/tag/"
+#define RELEASES_URL "https://api.github.com/repos/rootkitexe/ArcPort/releases?per_page=100"
+#define RELEASE_PAGE "https://github.com/rootkitexe/ArcPort/releases/tag/"
 
 static long long tag_rank(const std::string &t) {
     int n, a, b, c;
@@ -144,10 +144,11 @@ static std::string g_update_tag;  // a newer release's tag (g_update_lock)
 static std::string g_update_url;  // its Windows zip (browser_download_url: the download counts on GitHub as a click)
 static long long g_update_size;
 static pthread_mutex_t g_update_lock = PTHREAD_MUTEX_INITIALIZER;
-#define UPDATE_ASSET "PokeL-ARecomp-windows-x64.zip"
+#define UPDATE_ASSET "ArcPort-windows-x64.zip"
 
 static void *update_thread(void *) {
-    return NULL;  // (off for now: this project's own releases, above, once the updater is tested with them)
+    // (ArcPort: on, asking rootkitexe/ArcPort's releases - RELEASES_URL. A release offers itself only when its tag
+    // outranks LARECOMP_VERSION, so bump that with every tag. LARECOMP_NO_UPDATE_CHECK=1: no check.)
     std::string body;
     if (const char *t = getenv("LARECOMP_UPDATE_TAGS")) {  // (test) "beta_2,v1.0.0": these releases, no network
         for (const char *p = t; *p;) {
@@ -165,7 +166,7 @@ static void *update_thread(void *) {
         std::string out = std::string(rt_data_root()) + "/cache/releases.json";
         mkdir((std::string(rt_data_root()) + "/cache").c_str(), 0755);
         const char *av[] = {curl.c_str(), "-fsSL", "--max-time", "15", "-H", "Accept: application/vnd.github+json",
-                            "-A", "LASRecomp/" LARECOMP_VERSION, RELEASES_URL, NULL};
+                            "-A", "ArcPort/" LARECOMP_VERSION, RELEASES_URL, NULL};
         PlatProc p = plat_spawn(av, out.c_str(), false);
         if (!p || plat_proc_wait(p, true) != 0) { remove(out.c_str()); return NULL; }
         if (FILE *f = fopen(out.c_str(), "rb")) {
@@ -258,7 +259,7 @@ static void *upd_thread(void *) {
     } else {
         g_upd_zip = zip;
         std::string curl = sys + "curl.exe";
-        const char *av[] = {curl.c_str(), "-fsSL", "--retry", "2", "--max-time", "1800", "-A", "LASRecomp/" LARECOMP_VERSION,
+        const char *av[] = {curl.c_str(), "-fsSL", "--retry", "2", "--max-time", "1800", "-A", "ArcPort/" LARECOMP_VERSION,
                             "-o", zip.c_str(), url.c_str(), NULL};
         PlatProc p = plat_spawn(av, NULL, false);
         if (!p || plat_proc_wait(p, true) != 0) return upd_fail("the download didn't finish"), (void *)NULL;
@@ -270,9 +271,8 @@ static void *upd_thread(void *) {
         PlatProc p = plat_spawn(av, NULL, false);
         if (!p || plat_proc_wait(p, true) != 0) return upd_fail("the zip couldn't be unpacked"), (void *)NULL;
     }
-    fs::path src = u8p(work) / u8p("PokeL-ARecomp");
-    if (!fs::exists(src)) src = u8p(work) / u8p("PokeL-ARecomp");
-    if (!fs::exists(src / "PokeL-ARecomp.exe") && !fs::exists(src / "lasrecomp.exe")) return upd_fail("the zip isn't a PokeL-ARecomp release"), (void *)NULL;
+    fs::path src = u8p(work) / u8p("ArcPort");  // (tools/za/dist.sh zips the program as ArcPort/)
+    if (!fs::exists(src / "ArcPort.exe")) return upd_fail("the zip isn't an ArcPort release"), (void *)NULL;
     g_upd_state = UPD_INSTALL;
     // every file first: a half-moved update would mix two versions - moves only once the list is complete
     std::vector<fs::path> files;
@@ -425,7 +425,7 @@ static const char *fail_hint(int k, bool pt) {
         "dump (.xci / .nsp) and your prod.keys.",
         "Pok\xc3\xa9mon Legends: Arceus's base game isn't among those files. Choose the folder with your own dump.",
         "Make sure there's about 12 GB free and try again.",
-        "PokeL-ARecomp runs version 1.1.1 of the game (base game + the 1.1.1 / v262144 update).",
+        "ArcPort runs version 1.1.1 of the game (base game + the 1.1.1 / v262144 update).",
         "Some files are missing. Choose the folder again; if it happens again, dump the game again.",
         "Make sure there's about 4 GB free and try again. If it keeps happening, report it on GitHub.",
         "Put the prod.keys (and title.keys) dumped from your own Switch in the folder with the game files. Any file "
@@ -437,7 +437,7 @@ static const char *fail_hint(int k, bool pt) {
         "e o seu prod.keys.",
         "O jogo base de Pokémon Legends: Arceus não está entre esses arquivos. Escolha a pasta com o seu próprio dump.",
         "Veja se há uns 12 GB livres e tente de novo.",
-        "O PokeL-ARecomp roda a versão 1.1.1 do jogo (jogo base + atualização v262144).",
+        "O ArcPort roda a versão 1.1.1 do jogo (jogo base + atualização v262144).",
         "Faltam arquivos. Escolha a pasta de novo; se acontecer outra vez, faça o dump do jogo de novo.",
         "Veja se há uns 4 GB livres e tente de novo. Se continuar, avise no GitHub.",
         "Coloque o prod.keys (e o title.keys) do seu próprio Switch na pasta dos arquivos do jogo. Qualquer nome serve "
@@ -617,7 +617,7 @@ static bool import_packages(const std::vector<std::string> &pkgs, const std::str
     char tool[1100];
     if (!rt_resource("zaimport/zaimport" PLAT_EXE_SUFFIX, "build/zaimport/zaimport" PLAT_EXE_SUFFIX,
                      tool, sizeof tool)) {
-        err = "the game file importer is missing from this copy of PokeL-ARecomp";
+        err = "the game file importer is missing from this copy of ArcPort";
         return false;
     }
     std::string log = g_root + "/import.log";
@@ -1302,8 +1302,8 @@ static void *mod_install_thread(void *) {
         bool exefs = false;
         std::string romfs = find_mod_romfs(base, 0, exefs);
         if (romfs.empty()) {
-            msg = exefs ? TR("This mod changes the game's code (exefs/pchtxt). Performance mods like 60 FPS are already built into PokeL-ARecomp! For visual mods, use RomFS.",
-                             "Esse mod altera o código binário (exefs/pchtxt). Ajustes como 60 FPS já são nativos do PokeL-ARecomp! Para texturas e modelos, use mods com RomFS.")
+            msg = exefs ? TR("This mod changes the game's code (exefs/pchtxt). Performance mods like 60 FPS are already built into ArcPort! For visual mods, use RomFS.",
+                             "Esse mod altera o código binário (exefs/pchtxt). Ajustes como 60 FPS já são nativos do ArcPort! Para texturas e modelos, use mods com RomFS.")
                         : TR("No romfs folder in it: this doesn't look like a mod of the game's files.",
                              "Não tem pasta romfs: não parece um mod dos arquivos do jogo.");
             goto done;
@@ -1884,8 +1884,8 @@ static bool menu_tip(float s) {
         static const char *const pad[] = {"Minus + Plus", "View + Menu", "Create + Options"};
         int fam = bind_label_family() % 3;
         ImGui::PushTextWrapPos(0);
-        ImGui::TextUnformatted(TR("PokeL-ARecomp has its own menu for settings: F1 (or Minus+Plus on a controller).",
-                                  "O PokeL-ARecomp tem um menu próprio de configurações: F1 (ou Menos+Mais no controle)."));
+        ImGui::TextUnformatted(TR("ArcPort has its own menu for settings: F1 (or Minus+Plus on a controller).",
+                                  "O ArcPort tem um menu próprio de configurações: F1 (ou Menos+Mais no controle)."));
         ImGui::Spacing();
         if (g_pt) ImGui::Text("Abra no jogo com F1 ou Esc, ou no controle com o %s (ou %s juntos).", home_pt[fam], pad[fam]);
         else ImGui::Text("Open it in game with F1 or Esc, or on a controller with the %s (or %s together).", home_en[fam], pad[fam]);
@@ -2032,8 +2032,8 @@ static void prelaunch_tab(float sc) {
         ImGui::PushFont(g_font_menu);
         ImGui::TextColored(ImVec4(1, 0.72f, 0.4f, 1), "%s", TR("Are you sure?", "Tem certeza?"));
         ImGui::PopFont();
-        ImGui::Text(TR("This deletes PokeL-ARecomp's copy of the game files (%.1f GB).",
-                       "Isso apaga a cópia dos arquivos do jogo do PokeL-ARecomp (%.1f GB)."), gb);
+        ImGui::Text(TR("This deletes ArcPort's copy of the game files (%.1f GB).",
+                       "Isso apaga a cópia dos arquivos do jogo do ArcPort (%.1f GB)."), gb);
         ImGui::TextDisabled("%s", TR("Saves, mods and settings are kept. Your own game files aren't touched.",
                                      "Saves, mods e configurações ficam. Os seus próprios arquivos do jogo não são tocados."));
         if (rt_dev_mode()) {  // (a source checkout: the files are the project's own extracted/)
@@ -2044,7 +2044,7 @@ static void prelaunch_tab(float sc) {
         ImGui::Spacing();
         if (ImGui::Button(TR("Delete", "Apagar"), ImVec2(220 * sc, 0))) {
             bool ok = rt_remove_game_files(g_root.c_str());  // (runtime/paths.c: only what the extraction made)
-            set_job(ok ? "Game files deleted." : "Could not delete the game files (not in PokeL-ARecomp's data folder?).", !ok);
+            set_job(ok ? "Game files deleted." : "Could not delete the game files (not in ArcPort's data folder?).", !ok);
             g_files_deleted = true, gb = -1;
             ImGui::CloseCurrentPopup();
         }
@@ -2054,6 +2054,25 @@ static void prelaunch_tab(float sc) {
             ImGui::IsKeyPressed(ImGuiKey_Escape, false))
             ImGui::CloseCurrentPopup();
         ImGui::EndPopup();
+    }
+    ImGui::Spacing();
+    ImGui::Spacing();
+    // ArcPort: a desktop shortcut to this program (platform.h plat_create_shortcut), like Longshot's
+    heading(TR("Shortcut", "Atalho"));
+    static std::string shortcut_msg;
+    static bool shortcut_ok;
+    if (ImGui::Button(TR("Create desktop shortcut", "Criar atalho na área de trabalho"))) {
+        char where[1024] = "";
+        shortcut_ok = plat_create_shortcut(where, sizeof where);
+        shortcut_msg = shortcut_ok ? std::string(TR("Shortcut created: ", "Atalho criado: ")) + where
+                                   : std::string(TR("Couldn't create the shortcut: ", "Não deu para criar o atalho: ")) + where;
+        fprintf(stderr, "[launcher] shortcut: %s\n", shortcut_msg.c_str());
+    }
+    if (!shortcut_msg.empty()) {
+        ImGui::PushTextWrapPos(0);
+        if (shortcut_ok) ImGui::TextDisabled("%s", shortcut_msg.c_str());
+        else ImGui::TextColored(ImVec4(1, 0.5f, 0.4f, 1), "%s", shortcut_msg.c_str());
+        ImGui::PopTextWrapPos();
     }
     ImGui::Spacing();
     ImGui::Spacing();
@@ -2825,22 +2844,22 @@ extern "C" void launcher_run(const char *root) {
                                rebuild ? TR("The game code needs a rebuild", "O código do jogo precisa ser recompilado")
                                        : TR("Let's set the game up", "Vamos preparar o jogo"));
                     const char *what = rebuild
-                        ? TR("This version of PokeL-ARecomp builds the game's code a little differently. Your game files "
+                        ? TR("This version of ArcPort builds the game's code a little differently. Your game files "
                              "are already here: only the code is compiled again (a few minutes).",
-                             "Esta versão do PokeL-ARecomp compila o código do jogo de um jeito um pouco diferente. Os seus "
+                             "Esta versão do ArcPort compila o código do jogo de um jeito um pouco diferente. Os seus "
                              "arquivos do jogo já estão aqui: só o código é compilado de novo (alguns minutos).")
                         : TR("Choose the folder with your own copy of Pokémon Legends: Arceus, either way:\n"
                              "· the game extracted (exefs and romfs folders, as an emulator or your Switch extracts them): "
                              "no keys needed;\n"
                              "· or your dump: the base game (.xci or .nsp), optionally the update and the DLC (.nsp), and "
                              "the prod.keys from your Switch.\n"
-                             "You can also drop the folder on this window. The game isn't included with PokeL-ARecomp.",
+                             "You can also drop the folder on this window. The game isn't included with ArcPort.",
                              "Escolha a pasta com a sua própria cópia de Pokémon Legends: Arceus, de um destes jeitos:\n"
                              "· o jogo extraído (pastas exefs e romfs, como um emulador ou o seu Switch extraem): sem "
                              "precisar de keys;\n"
                              "· ou o seu dump: o jogo base (.xci ou .nsp), se quiser a atualização e a DLC (.nsp), e o "
                              "prod.keys do seu Switch.\n"
-                             "Também dá para arrastar a pasta para esta janela. O jogo não vem com o PokeL-ARecomp.");
+                             "Também dá para arrastar a pasta para esta janela. O jogo não vem com o ArcPort.");
                     float ty = 196 + text(dl, F_BODY, 16, x, 196, C_SOFT, what, w).y + 22;
                     if (!rebuild) {
                         panel(dl, x, ty, w, 64, C_PANEL);
@@ -3201,7 +3220,7 @@ extern "C" void launcher_run(const char *root) {
                 static const SDL_DialogFileFilter zip_f[] = {{"Zip", "zip"}};
                 if (button("##export", TR("Export (.zip)", "Exportar (.zip)"), bx, ly, 0, 46, BTN_SECONDARY, g_save_time != 0,
                            IC_DOWN_ARROW))
-                    SDL_ShowSaveFileDialog(picked_export, NULL, win, zip_f, 1, "PokeL-ARecomp save.zip");
+                    SDL_ShowSaveFileDialog(picked_export, NULL, win, zip_f, 1, "ArcPort save.zip");
                 bx += ImGui::GetItemRectSize().x / g_s + 10;
                 if (button("##opensave", TR("Open folder", "Abrir pasta"), bx, ly, 0, 46, BTN_SECONDARY, true, IC_FOLDER)) {
                     mkdir("save", 0755);
@@ -3209,11 +3228,11 @@ extern "C" void launcher_run(const char *root) {
                 }
                 ly += 64;
                 const char *from = TR("Where from: a JKSV backup (modded Switch: JKSV/Pokémon Legends Arceus/...), a save from "
-                                      "an emulator or from another copy of PokeL-ARecomp. Choose the folder holding the file "
+                                      "an emulator or from another copy of ArcPort. Choose the folder holding the file "
                                       "\"main\", or drop it (or a .zip) on this window. Your current save becomes a backup "
                                       "first, so nothing is lost. The save must be from the same game version or older.",
                                       "De onde: um backup do JKSV (Switch desbloqueado: JKSV/Pokémon Legends Arceus/...), um "
-                                      "save de emulador ou de outra cópia do PokeL-ARecomp. Escolha a pasta com o arquivo "
+                                      "save de emulador ou de outra cópia do ArcPort. Escolha a pasta com o arquivo "
                                       "\"main\", ou arraste ela (ou um .zip) para esta janela. O save atual vira um backup "
                                       "antes, então nada se perde. O save precisa ser da mesma versão do jogo ou mais antiga.");
                 float fh = text_size(F_BODY, 14, from, cw - 92).y;
@@ -3273,7 +3292,7 @@ extern "C" void launcher_run(const char *root) {
                     ImGui::Dummy(ImVec2(1, 0));
                 }
                 ImGui::EndChild();
-                bar = {C_TEAL, TR("Saves live in the save folder next to PokeL-ARecomp", "Os saves ficam na pasta save, ao lado do PokeL-ARecomp")};
+                bar = {C_TEAL, TR("Saves live in the save folder next to ArcPort", "Os saves ficam na pasta save, ao lado do ArcPort")};
                 if (back_key) g_tab = TAB_PLAY, g_focus_play = true;
             }
 
@@ -3303,27 +3322,27 @@ extern "C" void launcher_run(const char *root) {
             // ================= About
             if (g_tab == TAB_ABOUT) {
                 float x = 72, w = fminf(760, W_ - 144), y = 100;
-                y += text(dl, F_H1, 40, x, y, C_TEXT, "PLA Recomp").y + 4;
+                y += text(dl, F_H1, 40, x, y, C_TEXT, "ArcPort").y + 4;
                 y += text(dl, F_LABEL, 16, x, y, C_GOLD_HI,
                           (std::string(TR("Version ", "Versão ")) + tag_label(LARECOMP_VERSION, false)).c_str()).y + 18;
                 const char *about = TR("A PC port of Pokémon Legends: Arceus made by static recompilation: the game's code is "
                                        "turned into native code for your PC, and the Switch's system and graphics are "
-                                       "rebuilt around it. Built on LAS Recomp by Peiikai and its contributors, with "
-                                       "Ryujinx as a reference.\n\nNo part of the game is included: you bring your own "
+                                       "rebuilt around it. A fork of PokeL-ARecomp by fabioschmidt01, built on LAS Recomp by "
+                                       "Peiikai and its contributors, with Ryujinx as a reference.\n\nNo part of the game is included: you bring your own "
                                        "dump and keys. Pokémon and Nintendo Switch are trademarks of their owners; this "
                                        "project isn't affiliated with them.",
                                        "Um port para PC de Pokémon Legends: Arceus feito por recompilação estática: o código "
                                        "do jogo vira código nativo para o seu PC, e o sistema e os gráficos do Switch são "
-                                       "refeitos em volta dele. Feito sobre o LAS Recomp, do Peiikai e colaboradores, com "
-                                       "o Ryujinx como referência.\n\nNenhuma parte do jogo vem junto: você usa o seu "
+                                       "refeitos em volta dele. Um fork do PokeL-ARecomp, do fabioschmidt01, feito sobre o LAS "
+                                       "Recomp, do Peiikai e colaboradores, com o Ryujinx como referência.\n\nNenhuma parte do jogo vem junto: você usa o seu "
                                        "próprio dump e as suas chaves. Pokémon e Nintendo Switch são marcas dos seus donos; "
                                        "este projeto não tem ligação com eles.");
                 y += text(dl, F_BODY, 16, x, y, C_SOFT, about, w).y + 26;
                 if (button("##gh", TR("Project page (GitHub)", "Página do projeto (GitHub)"), x, y, 0, 48, BTN_SECONDARY))
-                    SDL_OpenURL("https://github.com/fabioschmidt01/PokeL-ARecomp-privado-teste");
+                    SDL_OpenURL("https://github.com/rootkitexe/ArcPort");
                 float bx2 = x + ImGui::GetItemRectSize().x / g_s + 12;
                 if (button("##issues", TR("Report a problem", "Relatar um problema"), bx2, y, 0, 48, BTN_SECONDARY))
-                    SDL_OpenURL("https://github.com/fabioschmidt01/PokeL-ARecomp-privado-teste/issues");
+                    SDL_OpenURL("https://github.com/rootkitexe/ArcPort/issues");
                 bx2 += ImGui::GetItemRectSize().x / g_s + 12;
                 if (button("##logs", TR("Open the logs folder", "Abrir a pasta de logs"), bx2, y, 0, 48, BTN_SECONDARY, true, IC_FOLDER))
                     reveal_folder("logs");
@@ -3440,12 +3459,12 @@ extern "C" void launcher_run(const char *root) {
                                                                                  tag_label(upd, false) + "?").c_str());
                             ImGui::PopFont();
                             if (upd_size > 0)
-                                ImGui::Text(TR("PokeL-ARecomp downloads it (%.0f MB) from GitHub, replaces its program files and opens again.",
-                                               "O PokeL-ARecomp baixa a versão nova (%.0f MB) do GitHub, troca os arquivos do programa e abre de novo."),
+                                ImGui::Text(TR("ArcPort downloads it (%.0f MB) from GitHub, replaces its program files and opens again.",
+                                               "O ArcPort baixa a versão nova (%.0f MB) do GitHub, troca os arquivos do programa e abre de novo."),
                                             upd_size / 1e6);
                             else
-                                ImGui::Text("%s", TR("PokeL-ARecomp downloads it from GitHub, replaces its program files and opens again.",
-                                                     "O PokeL-ARecomp baixa a versão nova do GitHub, troca os arquivos do programa e abre de novo."));
+                                ImGui::Text("%s", TR("ArcPort downloads it from GitHub, replaces its program files and opens again.",
+                                                     "O ArcPort baixa a versão nova do GitHub, troca os arquivos do programa e abre de novo."));
                             ImGui::TextDisabled("%s", TR("Saves, mods, settings and the compiled game are kept as they are.",
                                                          "Saves, mods, configurações e o jogo já compilado ficam como estão."));
                             ImGui::Spacing();

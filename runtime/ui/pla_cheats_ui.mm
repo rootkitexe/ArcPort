@@ -48,10 +48,10 @@ extern "C" void pla_cheats_draw(float scale) {
         opt_section(UI_TR("No cheats found", "Nenhum cheat encontrado"));
         opt_button(UI_TR("How to add cheats", "Como adicionar cheats"),
                    UI_TR("Put an Atmosphere cheat file for version 1.1.1 (AEE8F150DDA1B5A8.txt), or the whole atmosphere "
-                         "folder, inside the \"cheats\" folder next to PokeL-ARecomp.exe, then open this tab again after "
+                         "folder, inside the \"cheats\" folder next to ArcPort.exe, then open this tab again after "
                          "restarting the game.",
                          "Coloque um arquivo de cheats do Atmosphere da versão 1.1.1 (AEE8F150DDA1B5A8.txt), ou a pasta "
-                         "atmosphere inteira, dentro da pasta \"cheats\" ao lado do PokeL-ARecomp.exe, e abra esta aba de "
+                         "atmosphere inteira, dentro da pasta \"cheats\" ao lado do ArcPort.exe, e abra esta aba de "
                          "novo depois de reiniciar o jogo."));
         opt_end();
         return;
@@ -82,8 +82,8 @@ extern "C" void pla_cheats_draw(float scale) {
             snprintf(label, sizeof label, "%s##c%d", pla_cheats_name(i), i);
             bool on = pla_cheats_on(i), bad = pla_cheats_is_bad(i);
             if (bad) {
-                opt_button(label, UI_TR("This cheat uses instructions PokeL-ARecomp's cheat engine doesn't run yet.",
-                                        "Este cheat usa instruções que o motor de cheats do PokeL-ARecomp ainda não roda."));
+                opt_button(label, UI_TR("This cheat uses instructions ArcPort's cheat engine doesn't run yet.",
+                                        "Este cheat usa instruções que o motor de cheats do ArcPort ainda não roda."));
                 continue;
             }
             const char *desc = pass == 0

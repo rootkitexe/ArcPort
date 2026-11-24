@@ -219,7 +219,7 @@ static void log_to_file_without_terminal(void) {
 static void require_cpu(void) {
     __builtin_cpu_init();
     if (__builtin_cpu_supports("sse4.2") && __builtin_cpu_supports("popcnt")) return;
-    fprintf(stderr, "FATAL: PokeL-ARecomp needs a CPU with SSE4.2 (Intel Core i3/i5/i7 / 2008 or newer, AMD Bulldozer / "
+    fprintf(stderr, "FATAL: ArcPort needs a CPU with SSE4.2 (Intel Core i3/i5/i7 / 2008 or newer, AMD Bulldozer / "
                     "2011 or newer).\n");
     exit(1);
 }
@@ -364,7 +364,7 @@ void plat_fatal_notice(void) {
 }
 
 static void *notice_thread(void *text) {
-    SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_WARNING, "PokeL-ARecomp", text, NULL);
+    SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_WARNING, "ArcPort", text, NULL);
     free(text);
     return NULL;
 }
@@ -491,3 +491,48 @@ int plat_rename(const char *from, const char *to) {
 }
 
 bool plat_window_screen_hash(void *hwnd, uint32_t *out) { (void)hwnd, (void)out; return false; }  // (Windows only)
+
+// plat_create_shortcut (platform.h): arcport.desktop in ~/.local/share/applications (the menu, Steam's "Add a
+// non-Steam game" list) and a copy on ~/Desktop when there is one. Exec is the AppImage itself ($APPIMAGE: the
+// running program is a mounted copy that disappears when it exits), else this binary.
+#include <sys/stat.h>
+static bool write_desktop_file(const char *path, const char *exe, const char *dir) {
+    FILE *f = fopen(path, "w");
+    if (!f) return false;
+    fprintf(f, "[Desktop Entry]\nType=Application\nName=ArcPort\nComment=Pok\xc3\xa9mon Legends: Arceus PC Port\n"
+               "Exec=\"%s\"\nPath=%s\nTerminal=false\nCategories=Game;\n", exe, dir);
+    fclose(f);
+    chmod(path, 0755);  // (GNOME and KDE launch a desktop-folder entry only when it's executable)
+    return true;
+}
+bool plat_create_shortcut(char *out, size_t n) {
+    char exe[4096], dir[4096], path[4200];
+    const char *appimage = getenv("APPIMAGE");
+    if (appimage && *appimage) snprintf(exe, sizeof exe, "%s", appimage);
+    else {
+        ssize_t len = readlink("/proc/self/exe", exe, sizeof exe - 1);
+        if (len <= 0) return snprintf(out, n, "can't find the program's path"), false;
+        exe[len] = 0;
+    }
+    snprintf(dir, sizeof dir, "%s", exe);
+    char *slash = strrchr(dir, '/');
+    if (slash && slash != dir) *slash = 0;
+    const char *home = getenv("HOME");
+    if (!home || !*home) return snprintf(out, n, "HOME isn't set"), false;
+    snprintf(path, sizeof path, "%s/.local/share/applications", home);
+    char mk[4200];
+    snprintf(mk, sizeof mk, "%s/.local", home); mkdir(mk, 0755);
+    snprintf(mk, sizeof mk, "%s/.local/share", home); mkdir(mk, 0755);
+    mkdir(path, 0755);
+    strncat(path, "/arcport.desktop", sizeof path - strlen(path) - 1);
+    if (!write_desktop_file(path, exe, dir)) return snprintf(out, n, "can't write %s", path), false;
+    snprintf(out, n, "%s", path);
+    char desk[4200];
+    struct stat st;
+    snprintf(desk, sizeof desk, "%s/Desktop", home);
+    if (stat(desk, &st) == 0 && S_ISDIR(st.st_mode)) {
+        strncat(desk, "/ArcPort.desktop", sizeof desk - strlen(desk) - 1);
+        if (write_desktop_file(desk, exe, dir)) snprintf(out, n, "%s", desk);
+    }
+    return true;
+}

@@ -6,6 +6,7 @@
 #import <Metal/Metal.h>
 #endif
 #include <SDL3/SDL.h>
+extern "C" const char *larecomp_version(void);  // ui/launcher.mm
 #include <math.h>
 #include <pthread.h>
 #include <atomic>
@@ -991,9 +992,9 @@ static void tab_quit(float scale, bool in_game) {
         ask = 0;
     const char *lost = in_game ? TR("\n\nProgress since your last save is lost.", "\n\nO progresso desde o último save se perde.") : "";
     char d1[300], d2[300];
-    snprintf(d1, sizeof d1, "%s%s", TR("Leaves the game and goes back to the PokeL-ARecomp start screen.",
-                                       "Sai do jogo e volta para a tela inicial do PokeL-ARecomp."), lost);
-    snprintf(d2, sizeof d2, "%s%s", TR("Closes PokeL-ARecomp.", "Fecha o PokeL-ARecomp."), lost);
+    snprintf(d1, sizeof d1, "%s%s", TR("Leaves the game and goes back to the ArcPort start screen.",
+                                       "Sai do jogo e volta para a tela inicial do ArcPort."), lost);
+    snprintf(d2, sizeof d2, "%s%s", TR("Closes ArcPort.", "Fecha o ArcPort."), lost);
     opt_begin("##quit", scale);
     opt_section(TR("Quit", "Sair"));
     if (!ask) {
@@ -1489,7 +1490,8 @@ static void perfmon_draw(const ImVec2 &display, float scale) {
                      ram_c(0.80f, 0.45f, 0.70f, 1.0f), fps_c(0.95f, 0.95f, 0.95f, 1.0f),
                      wait_c(0.93f, 0.76f, 0.33f, 1.0f), pic_c(0.62f, 0.70f, 0.95f, 1.0f);
 
-        ImGui::TextDisabled("%s", TR("PLA Recomp 0.0.19, game 1.1.1", "PLA Recomp 0.0.19, jogo 1.1.1"));
+        // (the version from the start screen's LARECOMP_VERSION, not a copy that goes stale: this said 0.0.19 until ArcPort)
+        ImGui::TextDisabled("ArcPort %s, %s", larecomp_version(), TR("game 1.1.1", "jogo 1.1.1"));
 
         if (ImGui::BeginTable("##perft", 4, ImGuiTableFlags_SizingFixedFit)) {
             float w0 = ImGui::CalcTextSize(TR("Frame", "Quadro")).x + 8.0f * scale;

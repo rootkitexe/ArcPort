@@ -94,7 +94,7 @@ GAMELIB  := $(B)/lasgame.so
 GAMELIB_LDFLAGS := -shared -fuse-ld=lld  # (the runtime functions it calls: the app's own, -rdynamic)
 GAMELIB_SHARED := -shared
 else
-EXE      := $(B)/PokeL-ARecomp.exe
+EXE      := $(B)/ArcPort.exe
 DEPINC   := $(if $(DEPS),-I$(DEPS)/include)
 OSFLAGS  := -D_FILE_OFFSET_BITS=64 -D_POSIX_THREAD_SAFE_FUNCTIONS -D_CRT_RAND_S -DWIN32_LEAN_AND_MEAN -DNOMINMAX \
             $(if $(RELEASE),-DLARECOMP_ZIP_BUILD)  # (the log's [info] line: the release zip)
@@ -111,17 +111,21 @@ IMGUI_OBJ += $(B)/imgui/imgui_impl_vulkan.o
 UIFLAGS  := -x c++ $(OSFLAGS)  # the .mm UI sources are plain C++ apart from __APPLE__ blocks
 GAMELIB  := $(B)/lasgame.dll
 # the runtime functions it calls: exported by the .exe, linked through its import library
-LDFLAGS  += -Wl,--export-all-symbols -Wl,--out-implib,$(B)/PokeL-ARecomp.dll.a
-GAMELIB_LDFLAGS := -shared -fuse-ld=lld $(B)/PokeL-ARecomp.dll.a
+LDFLAGS  += -Wl,--export-all-symbols -Wl,--out-implib,$(B)/ArcPort.dll.a
+GAMELIB_LDFLAGS := -shared -fuse-ld=lld $(B)/ArcPort.dll.a
 GAMELIB_SHARED := -shared  # (+ the import library: runtime/gamebuild.c)
 endif
 
+# APP_EXE: the program's file name. On Windows the game code links against it by name (its import library,
+# ArcPort.dll.a), so it is part of GAMELIB_ID below: renaming the program (ArcPort, 2026-11-24, was PokeL-ARecomp.exe)
+# makes the start screen build the game code again instead of loading a library that imports a missing exe.
+APP_EXE := $(if $(filter windows,$(PLATFORM)),ArcPort.exe,)
 # GAMELIB_ID: what the game code library is built from (the generator, the headers it is compiled against, the
 # flags). A library with another id is rebuilt by the start screen, never loaded.
 GAMELIB_SRCS := tools/game_addresses.py runtime/game_addresses/versions.h $(wildcard runtime/game_addresses/patches_v*.h) tools/gen.py tools/lifter.py tools/analyze.py tools/nso.py tools/passes.py tools/patches.py \
                 tools/simd_c.py tools/flagfuse.py tools/regpromote.py tools/za_patches.py tools/pla_patches.py tools/rando/patch_variants.json tools/gamelib_entry.c runtime/hle/hle_symbols.txt \
                 runtime/cpu.h runtime/simd.h runtime/simd_fp.h runtime/gamelib.h
-GAMELIB_ID := $(shell (cat $(GAMELIB_SRCS); echo '$(GENFLAGS)') | (shasum -a 256 2>/dev/null || sha256sum) | cut -c1-16)
+GAMELIB_ID := $(shell (cat $(GAMELIB_SRCS); echo '$(GENFLAGS)'; echo '$(APP_EXE)') | (shasum -a 256 2>/dev/null || sha256sum) | cut -c1-16)
 # The library's own id adds the game's main build ID (what `make gen` generated from: $(GEN)/main/main_build_id.txt),
 # so game code for another game version is never loaded (runtime/gamelib.h gamelib_full_id)
 GAMELIB_BUILD := $(shell cut -c1-16 $(GEN)/main/main_build_id.txt 2>/dev/null)
@@ -325,10 +329,10 @@ dist:
 	@[ -d build/helper/rando-gen ] || { echo "make rando-helper first (the seed generator)"; exit 1; }
 	@[ -d build/helper/lasgen ] || { echo "make gen-helper first (the game code generator)"; exit 1; }
 	@[ -x build/zig/zig.exe ] || { echo "tools/fetch_zig.sh first (the compiler)"; exit 1; }
-	$(MAKE) B=$(WIN_B) DEPS=$(CURDIR)/build/deps-win RELEASE=1 $(WIN_B)/PokeL-ARecomp.exe
-	! nm $(WIN_B)/PokeL-ARecomp.exe | grep ' f_70' >/dev/null  # (no game code inside)
+	$(MAKE) B=$(WIN_B) DEPS=$(CURDIR)/build/deps-win RELEASE=1 $(WIN_B)/ArcPort.exe
+	! nm $(WIN_B)/ArcPort.exe | grep ' f_70' >/dev/null  # (no game code inside)
 	rm -rf build/dist && mkdir -p "$(DIST)/gamelib-src"
-	cp $(WIN_B)/PokeL-ARecomp.exe $(WIN_B)/PokeL-ARecomp.dll.a "$(DIST)/"
+	cp $(WIN_B)/ArcPort.exe $(WIN_B)/ArcPort.dll.a "$(DIST)/"
 	tools/zig_slim.sh $(strip $(filter-out -Iruntime,$(GENFLAGS)))  # (zig with its runtime built ahead of time)
 	cp -R build/helper/lasgen "$(DIST)/"
 	cp -R build/zig-slim "$(DIST)/zig"
@@ -341,7 +345,7 @@ dist:
 	cp third_party/fonts/DejaVu/LICENSE "$(DIST)/DejaVu-LICENSE.txt"
 	cp README.md LICENSE "$(DIST)/"  # (licenses and source links of the bundled components: README "License")
 	cp -R build/helper/rando-gen "$(DIST)/"
-	PATH="$(CURDIR)/build/deps-win/bin:$$PATH" ldd $(WIN_B)/PokeL-ARecomp.exe | awk '(/ucrt64/ || /deps-win/) && !/vulkan-1/ {print $$3}' | sort -u | \
+	PATH="$(CURDIR)/build/deps-win/bin:$$PATH" ldd $(WIN_B)/ArcPort.exe | awk '(/ucrt64/ || /deps-win/) && !/vulkan-1/ {print $$3}' | sort -u | \
 	    xargs -I{} cp -u {} "$(DIST)/"
 	! ls "$(DIST)" | grep -iE 'x264|x265|xvid|postproc'  # (no GPL codec libraries in the release)
 	cd build/dist && if command -v zip >/dev/null; then zip -qr "LAS Recomp-$(VERSION)-windows.zip" "LAS Recomp"; \

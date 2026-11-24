@@ -764,7 +764,7 @@ static bool prep_run_locked(const char *romfs, void (*progress)(int done, int to
 // under a second with warm caches. LARECOMP_SHADER_PREP=0: not; =1: Link's Awakening too (tests).
 // The preparation's progress on screen (a black frame with a notice line: vulkan/device.c backend_notice_frame), once
 // it has taken over 1.5 s - with warm caches it is done in well under a second and nothing shows. After a driver or
-// PokeL-ARecomp update it can take minutes on a slow driver (#291: 338 s on an Intel HD 520) with the window black, and
+// ArcPort update it can take minutes on a slow driver (#291: 338 s on an Intel HD 520) with the window black, and
 // players closed it as a hang (#291 #297). Ten frames a second at most.
 static bool boot_shown;
 static void boot_progress(int done, int total) {

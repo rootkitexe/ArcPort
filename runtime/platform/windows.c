@@ -566,8 +566,8 @@ static void log_to_file_without_console(void) {
 static void require_cpu(void) {
     __builtin_cpu_init();
     if (__builtin_cpu_supports("sse4.2") && __builtin_cpu_supports("popcnt")) return;
-    MessageBoxA(NULL, "PokeL-ARecomp needs a CPU with SSE4.2 (Intel Core i3/i5/i7 / 2008 or newer, AMD Bulldozer / 2011 or "
-                "newer).", "PokeL-ARecomp", MB_ICONERROR | MB_OK);
+    MessageBoxA(NULL, "ArcPort needs a CPU with SSE4.2 (Intel Core i3/i5/i7 / 2008 or newer, AMD Bulldozer / 2011 or "
+                "newer).", "ArcPort", MB_ICONERROR | MB_OK);
     ExitProcess(1);
 }
 
@@ -738,7 +738,7 @@ static DWORD WINAPI sampler_main(void *arg) {
 }
 
 static DWORD WINAPI notice_thread(LPVOID text) {
-    MessageBoxA(NULL, text, "PokeL-ARecomp", MB_ICONWARNING | MB_OK);
+    MessageBoxA(NULL, text, "ArcPort", MB_ICONWARNING | MB_OK);
     free(text);
     return 0;
 }
@@ -1426,4 +1426,42 @@ bool plat_window_screen_hash(void *hwnd, uint32_t *out) {
     if (mdc) DeleteDC(mdc);
     ReleaseDC(NULL, sdc);
     return ok;
+}
+
+// plat_create_shortcut (platform.h): Desktop\ArcPort.lnk -> this exe, started in its folder (where the data and the
+// game code live), with the exe's own icon. COM on this thread only for the call (the start screen's thread).
+#include <shlobj.h>
+#include <objbase.h>
+// FOLDERID_Desktop {B4BFCC3A-DB2C-424C-B029-7FE99A87C641}, defined here: not every MinGW libuuid carries it
+static const GUID arc_folderid_desktop = {0xB4BFCC3A, 0xDB2C, 0x424C, {0xB0, 0x29, 0x7F, 0xE9, 0x9A, 0x87, 0xC6, 0x41}};
+bool plat_create_shortcut(char *out, size_t n) {
+    wchar_t exe[MAX_PATH], dir[MAX_PATH], lnk[MAX_PATH + 32];
+    DWORD len = GetModuleFileNameW(NULL, exe, MAX_PATH);
+    if (!len || len >= MAX_PATH) return snprintf(out, n, "can't find the program's path"), false;
+    wcscpy(dir, exe);
+    wchar_t *slash = wcsrchr(dir, L'\\');
+    if (slash) *slash = 0;
+    PWSTR desk = NULL;
+    if (FAILED(SHGetKnownFolderPath(&arc_folderid_desktop, 0, NULL, &desk)) || !desk)
+        return snprintf(out, n, "can't find the desktop folder"), false;
+    _snwprintf(lnk, sizeof lnk / sizeof *lnk, L"%ls\\ArcPort.lnk", desk);
+    lnk[sizeof lnk / sizeof *lnk - 1] = 0;
+    CoTaskMemFree(desk);
+    HRESULT init = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED);
+    IShellLinkW *sl = NULL;
+    IPersistFile *pf = NULL;
+    HRESULT hr = CoCreateInstance(&CLSID_ShellLink, NULL, CLSCTX_INPROC_SERVER, &IID_IShellLinkW, (void **)&sl);
+    if (SUCCEEDED(hr)) {
+        sl->lpVtbl->SetPath(sl, exe);
+        sl->lpVtbl->SetWorkingDirectory(sl, dir);
+        sl->lpVtbl->SetIconLocation(sl, exe, 0);
+        sl->lpVtbl->SetDescription(sl, L"ArcPort - Pok\u00e9mon Legends: Arceus PC Port");
+        hr = sl->lpVtbl->QueryInterface(sl, &IID_IPersistFile, (void **)&pf);
+        if (SUCCEEDED(hr)) hr = pf->lpVtbl->Save(pf, lnk, TRUE), pf->lpVtbl->Release(pf);
+        sl->lpVtbl->Release(sl);
+    }
+    if (SUCCEEDED(init)) CoUninitialize();
+    if (FAILED(hr)) return snprintf(out, n, "Windows refused the shortcut (error 0x%08lx)", (unsigned long)hr), false;
+    WideCharToMultiByte(CP_UTF8, 0, lnk, -1, out, (int)n, NULL, NULL);
+    return true;
 }

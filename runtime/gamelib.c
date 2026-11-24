@@ -138,7 +138,7 @@ static const GameLibTables *open_lib(const char *path, const char *want) {
         if (last_slash) {
             *last_slash = '\0';
             SetDllDirectoryA(exe_dir);
-            // The game code imports from "PokeL-ARecomp.exe" (its import library, PokeL-ARecomp.dll.a: the Makefile), the
+            // The game code imports from "ArcPort.exe" (its import library, ArcPort.dll.a: the Makefile), the
             // running program - no lasrecomp.exe alias (a hard link to this exe, then loaded as a library: a second copy
             // of the program in memory). The alias earlier versions made is removed. (2026-11-19)
             char alias[MAX_PATH], self_path[MAX_PATH];

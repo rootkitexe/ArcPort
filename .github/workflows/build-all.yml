@@ -1,4 +1,4 @@
-name: Build PokeL-ARecomp (Windows & Linux)
+name: Build ArcPort (Windows & Linux)
 
 on:
   push:
@@ -102,18 +102,15 @@ jobs:
       - name: Verify Output Zip
         shell: pwsh
         run: |
-          if (Test-Path "build/dist-za/ZA-Recomp-windows.zip") {
-            Move-Item -Force "build/dist-za/ZA-Recomp-windows.zip" "build/dist-za/PokeL-ARecomp-windows-x64.zip"
-          }
-          if (!(Test-Path "build/dist-za/PokeL-ARecomp-windows-x64.zip")) {
-            throw "Expected package build/dist-za/PokeL-ARecomp-windows-x64.zip was not found!"
+          if (!(Test-Path "build/dist-za/ArcPort-windows-x64.zip")) {
+            throw "Expected package build/dist-za/ArcPort-windows-x64.zip was not found!"
           }
 
       - name: Upload Windows Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: PokeL-ARecomp-windows-x64
-          path: build/dist-za/PokeL-ARecomp-windows-x64.zip
+          name: ArcPort-windows-x64
+          path: build/dist-za/ArcPort-windows-x64.zip
           if-no-files-found: error
 
   linux:
@@ -145,14 +142,14 @@ jobs:
           for f in build/dist/*.AppImage; do
             if [ -f "$f" ]; then
               echo "Found AppImage: $f"
-              cp -v "$f" "build/dist/PokeL-ARecomp-linux-x86_64.AppImage" || true
+              cp -v "$f" "build/dist/ArcPort-linux-x86_64.AppImage" || true
             fi
           done
 
       - name: Upload Linux Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: PokeL-ARecomp-linux-x86_64
+          name: ArcPort-linux-x86_64
           path: build/dist/*.AppImage
           if-no-files-found: error
 
@@ -172,13 +169,13 @@ jobs:
       - name: Download Windows Artifact
         uses: actions/download-artifact@v4
         with:
-          name: PokeL-ARecomp-windows-x64
+          name: ArcPort-windows-x64
           path: dist-release
 
       - name: Download Linux Artifact
         uses: actions/download-artifact@v4
         with:
-          name: PokeL-ARecomp-linux-x86_64
+          name: ArcPort-linux-x86_64
           path: dist-release
 
       - name: Build Release Notes
@@ -186,13 +183,14 @@ jobs:
         run: |
           TAG="${GITHUB_REF_NAME}"
           {
-            echo "## PokeL-ARecomp (PLA Recomp) ${TAG}"
+            echo "## ArcPort ${TAG}"
             echo
-            echo "Native PC port of **Pokémon Legends: Arceus** (1.1.1)."
+            echo "Native PC port of **Pokémon Legends: Arceus** (1.1.1), built on your PC from your own game files."
+            echo "Based on PokeL-ARecomp (fabioschmidt01) and LAS Recomp (Peiikai)."
             echo
             echo "### Downloads"
-            echo "- **Windows**: \`PokeL-ARecomp-windows-x64.zip\`"
-            echo "- **Linux**: \`PokeL-ARecomp-${TAG}-linux-x86_64.AppImage\` (glibc 2.35+, Steam Deck / Ubuntu / Mint / Fedora / Arch)"
+            echo "- **Windows**: \`ArcPort-windows-x64.zip\`"
+            echo "- **Linux**: \`ArcPort-${TAG}-linux-x86_64.AppImage\` (glibc 2.35+, Steam Deck / Ubuntu / Mint / Fedora / Arch)"
             echo
             if [ -s .github/RELEASE_NOTES.md ]; then
               cat .github/RELEASE_NOTES.md
@@ -208,7 +206,7 @@ jobs:
           files: |
             dist-release/*.zip
             dist-release/*.AppImage
-          name: "PokeL-ARecomp ${{ github.ref_name }}"
+          name: "ArcPort ${{ github.ref_name }}"
           draft: false
           prerelease: false
           body_path: release_notes.md
